@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Біреу артта</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background-color: #1e1e2e;
+      color: white;
+    }
+    #gameCanvas {
+      display: block;
+      margin: 0 auto;
+      background: #222;
+    }
+    .score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 1.5em;
+      color: white;
+    }
+    .game-over {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      text-align: center;
+    }
+    .game-over button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1em;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .game-over button:hover {
+      background-color: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <div class="score">Ұпай: <span id="score">0</span></div>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <div class="game-over" id="gameOver" style="display: none;">
+    <h1>Ойын аяқталды!</h1>
+    <p>Сіздің ұпайыңыз: <span id="finalScore">0</span></p>
+    <button onclick="startGame()">Қайта бастау</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const scoreDisplay = document.getElementById("score");
+    const gameOverDisplay = document.getElementById("gameOver");
+    const finalScoreDisplay = document.getElementById("finalScore");
+
+    let score = 0;
+    let targets = [];
+    let targetColor = "green";
+    let isGameOver = false;
+
+    class Target {
+      constructor(x, y, radius, color, speed) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.color = color;
+        this.speed = speed;
+      }
+
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.closePath();
+      }
+
+      update() {
+        this.y += this.speed;
+        if (this.y - this.radius > canvas.height) {
+          this.y = -this.radius;
+          this.x = Math.random() * (canvas.width - this.radius * 2) + this.radius;
+          if (this.color === targetColor) {
+            endGame();
+          }
+        }
+        this.draw();
+      }
+    }
+
+    function generateTargets() {
+      for (let i = 0; i < 5; i++) {
+        const radius = Math.random() * 20 + 20;
+        const x = Math.random() * (canvas.width - radius * 2) + radius;
+        const y = Math.random() * canvas.height - canvas.height;
+        const speed = Math.random() * 2 + 1;
+        const color = getRandomColor();
+        targets.push(new Target(x, y, radius, color, speed));
+      }
+    }
+
+    function getRandomColor() {
+      const colors = ["red", "blue", "green", "yellow", "orange", "purple"];
+      return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    function checkCollision(x, y) {
+      targets.forEach((target, index) => {
+        const dist = Math.sqrt(
+          (x - target.x) ** 2 + (y - target.y) ** 2
+        );
+        if (dist < target.radius) {
+          if (target.color === targetColor) {
+            score++;
+            scoreDisplay.textContent = score;
+            targets.splice(index, 1);
+            addNewTarget();
+          } else {
+            endGame();
+          }
+        }
+      });
+    }
+
+    function addNewTarget() {
+      const radius = Math.random() * 20 + 20;
+      const x = Math.random() * (canvas.width - radius * 2) + radius;
+      const y = Math.random() * canvas.height - canvas.height;
+      const speed = Math.random() * 2 + 1;
+      const color = getRandomColor();
+      targets.push(new Target(x, y, radius, color, speed));
+    }
+
+    function endGame() {
+      isGameOver = true;
+      gameOverDisplay.style.display = "block";
+      finalScoreDisplay.textContent = score;
+    }
+
+    function startGame() {
+      score = 0;
+      scoreDisplay.textContent = score;
+      targets = [];
+      isGameOver = false;
+      gameOverDisplay.style.display = "none";
+      generateTargets();
+      animate();
+    }
+
+    canvas.addEventListener("click", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      checkCollision(x, y);
+    });
+
+    function animate() {
+      if (isGameOver) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      targets.forEach((target) => target.update());
+      requestAnimationFrame(animate);
+    }
+
+    startGame();
+  </script>
+</body>
+</html>
