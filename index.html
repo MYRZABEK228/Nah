@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Біреу артта</title>
+  <title>Жылдам таңда</title>
   <style>
     body {
       margin: 0;
@@ -17,9 +17,18 @@
       margin: 0 auto;
       background: #222;
     }
-    .score {
+    .instructions {
       position: absolute;
       top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.5em;
+      color: yellow;
+      text-align: center;
+    }
+    .score {
+      position: absolute;
+      top: 50px;
       left: 10px;
       font-size: 1.5em;
       color: white;
@@ -48,6 +57,7 @@
   </style>
 </head>
 <body>
+  <div class="instructions" id="instructions">Қызыл шеңберді бас!</div>
   <div class="score">Ұпай: <span id="score">0</span></div>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
   <div class="game-over" id="gameOver" style="display: none;">
@@ -60,22 +70,24 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
+    const instructionsDisplay = document.getElementById("instructions");
     const scoreDisplay = document.getElementById("score");
     const gameOverDisplay = document.getElementById("gameOver");
     const finalScoreDisplay = document.getElementById("finalScore");
 
     let score = 0;
     let targets = [];
-    let targetColor = "green";
+    let targetColor = "red";
     let isGameOver = false;
 
     class Target {
-      constructor(x, y, radius, color, speed) {
+      constructor(x, y, radius, color, speedX, speedY) {
         this.x = x;
         this.y = y;
         this.radius = radius;
         this.color = color;
-        this.speed = speed;
+        this.speedX = speedX;
+        this.speedY = speedY;
       }
 
       draw() {
@@ -87,26 +99,30 @@
       }
 
       update() {
-        this.y += this.speed;
-        if (this.y - this.radius > canvas.height) {
-          this.y = -this.radius;
-          this.x = Math.random() * (canvas.width - this.radius * 2) + this.radius;
-          if (this.color === targetColor) {
-            endGame();
-          }
+        this.x += this.speedX;
+        this.y += this.speedY;
+
+        if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
+          this.speedX *= -1;
         }
+        if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
+          this.speedY *= -1;
+        }
+
         this.draw();
       }
     }
 
     function generateTargets() {
-      for (let i = 0; i < 5; i++) {
+      targets = [];
+      for (let i = 0; i < 10; i++) {
         const radius = Math.random() * 20 + 20;
         const x = Math.random() * (canvas.width - radius * 2) + radius;
-        const y = Math.random() * canvas.height - canvas.height;
-        const speed = Math.random() * 2 + 1;
+        const y = Math.random() * (canvas.height - radius * 2) + radius;
+        const speedX = (Math.random() * 4 + 2) * (Math.random() > 0.5 ? 1 : -1);
+        const speedY = (Math.random() * 4 + 2) * (Math.random() > 0.5 ? 1 : -1);
         const color = getRandomColor();
-        targets.push(new Target(x, y, radius, color, speed));
+        targets.push(new Target(x, y, radius, color, speedX, speedY));
       }
     }
 
@@ -126,6 +142,7 @@
             scoreDisplay.textContent = score;
             targets.splice(index, 1);
             addNewTarget();
+            updateInstruction();
           } else {
             endGame();
           }
@@ -136,10 +153,20 @@
     function addNewTarget() {
       const radius = Math.random() * 20 + 20;
       const x = Math.random() * (canvas.width - radius * 2) + radius;
-      const y = Math.random() * canvas.height - canvas.height;
-      const speed = Math.random() * 2 + 1;
+      const y = Math.random() * (canvas.height - radius * 2) + radius;
+      const speedX = (Math.random() * 4 + 2) * (Math.random() > 0.5 ? 1 : -1);
+      const speedY = (Math.random() * 4 + 2) * (Math.random() > 0.5 ? 1 : -1);
       const color = getRandomColor();
-      targets.push(new Target(x, y, radius, color, speed));
+      targets.push(new Target(x, y, radius, color, speedX, speedY));
+    }
+
+    function updateInstruction() {
+      targetColor = getRandomColor();
+      instructionsDisplay.textContent = `${capitalize(targetColor)} шеңберді бас!`;
+    }
+
+    function capitalize(word) {
+      return word.charAt(0).toUpperCase() + word.slice(1);
     }
 
     function endGame() {
@@ -154,6 +181,7 @@
       targets = [];
       isGameOver = false;
       gameOverDisplay.style.display = "none";
+      updateInstruction();
       generateTargets();
       animate();
     }
